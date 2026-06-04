@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.minecraft.ChatFormatting;
@@ -102,11 +103,16 @@ public final class CoordsHudElement implements HudElement {
 
     private static Component buildBiomeLine(ClientLevel level, BlockPos pos, CoordsConfig config) {
         Holder<Biome> holder = level.getBiome(pos);
-        MutableComponent name = holder.unwrapKey()
+        Optional<ResourceKey<Biome>> keyOpt = holder.unwrapKey();
+
+        // translatableWithFallback honors a (modded) biome's own translation
+        // when present, and otherwise shows a clean prettified name rather than
+        // the raw "biome.mymod.crystal_forest" key.
+        MutableComponent name = keyOpt
             .map(key -> {
                 Identifier id = key.identifier();
                 String translationKey = "biome." + id.getNamespace() + "." + id.getPath().replace('/', '.');
-                return Component.translatable(translationKey);
+                return Component.translatableWithFallback(translationKey, prettify(id.getPath()));
             })
             .orElseGet(() -> Component.literal("Unknown Biome"));
 
@@ -114,12 +120,26 @@ public final class CoordsHudElement implements HudElement {
             return name; // plain white (default color passed to graphics.text)
         }
 
-        // Prefer the curated palette; fall back to the biome's grass color for
-        // modded biomes. Always lift dark colors to a readable brightness.
-        Integer curated = holder.unwrapKey().map(BiomeColors::curated).orElse(null);
-        int raw = curated != null
-            ? curated
-            : holder.value().getGrassColor(pos.getX(), pos.getZ()) & 0xFFFFFF;
+        // Prefer the curated vanilla palette; for modded biomes pick water or
+        // grass color based on the biome's name so oceans/rivers/beaches don't
+        // come out as generic green. Always lift dark colors to a readable
+        // brightness.
+        Integer curated = keyOpt.map(BiomeColors::curated).orElse(null);
+        int raw;
+        if (curated != null) {
+            raw = curated;
+        } else {
+            Biome biome = holder.value();
+            String path = keyOpt.map(k -> k.identifier().getPath()).orElse("");
+            boolean watery = path.contains("ocean")
+                || path.contains("river")
+                || path.contains("beach")
+                || path.contains("shore")
+                || path.contains("sea");
+            raw = (watery
+                ? biome.getWaterColor()
+                : biome.getGrassColor(pos.getX(), pos.getZ())) & 0xFFFFFF;
+        }
         return name.withColor(ensureReadable(raw));
     }
 
@@ -156,8 +176,17 @@ public final class CoordsHudElement implements HudElement {
                 StructureStart start = structureManager.getStructureWithPieceAt(pos, structure);
                 if (start != null && start.isValid()) {
                     Identifier id = registry.getKey(structure);
-                    String name = id == null ? "Structure" : prettify(id.getPath());
-                    return Component.literal(name).withStyle(ChatFormatting.GOLD);
+                    MutableComponent line;
+                    if (id == null) {
+                        line = Component.literal("Structure");
+                    } else {
+                        // translatableWithFallback lets mods supply a nicer name
+                        // via a translation key, while modded/vanilla structures
+                        // without one fall back to a prettified id path.
+                        String tkey = "structure." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+                        line = Component.translatableWithFallback(tkey, prettify(id.getPath()));
+                    }
+                    return line.withStyle(ChatFormatting.GOLD);
                 }
             }
             return null;
@@ -169,7 +198,10 @@ public final class CoordsHudElement implements HudElement {
     }
 
     private static String prettify(String path) {
-        String[] parts = path.split("_");
+        // Treat both '_' (snake_case) and '/' (nested resource paths) as word
+        // separators so modded ids like "ancient/lost_city" become "Ancient
+        // Lost City" rather than the raw path.
+        String[] parts = path.split("[_/]");
         StringBuilder sb = new StringBuilder();
         for (String part : parts) {
             if (part.isEmpty()) continue;
