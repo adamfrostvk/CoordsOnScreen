@@ -16,7 +16,7 @@ public final class CoordsConfigScreen {
         ConfigBuilder builder = ConfigBuilder.create()
             .setParentScreen(parent)
             .setTitle(Component.translatable("config.coordsonscreen.title"))
-            .setSavingRunnable(CoordsConfig.holder()::save);
+            .setSavingRunnable(CoordsConfig::save);
 
         ConfigEntryBuilder entry = builder.entryBuilder();
         ConfigCategory display = builder.getOrCreateCategory(

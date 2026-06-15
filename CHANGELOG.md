@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0
+- The mod now has its own config file handling, so **Cloth Config is no longer required**. Settings live in `config/coordsonscreen.json` and can be edited by hand; missing fields fall back to defaults and out-of-range values are clamped automatically.
+- **Cloth Config and ModMenu are now optional** — they're only needed for the in-game settings screen. Without them, the mod still loads and is fully configurable via the file.
+- If ModMenu is installed but Cloth Config isn't, the Configure button is simply hidden instead of erroring.
+
 ## 1.1.1
 - Modded biomes now display a clean prettified name when the mod ships no translation key (e.g. `biome.mymod.crystal_forest` → "Crystal Forest"), and modded translations are honored when present.
 - Modded biomes outside the curated palette now pick **water color** instead of grass color when the name indicates a water biome (`ocean`, `river`, `beach`, `shore`, `sea`), so modded oceans/beaches no longer come out as generic green.
