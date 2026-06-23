@@ -3,8 +3,20 @@ plugins {
 	id 'maven-publish'
 }
 
+// The metadata/maven version stays clean semver so Fabric parses it as a proper
+// semantic version (used in fabric.mod.json and the maven publication).
 version = project.mod_version
 group = project.maven_group
+
+// The published artifact filename carries the Minecraft target as well:
+//   coordsonscreen-mc<minecraft_version>_<mod_version>.jar   (e.g. coordsonscreen-mc26.2_1.2.0.jar)
+// This lets each Minecraft target ship as its own clearly-labeled file for
+// backwards compatibility with popular modded MC versions, without polluting the
+// semantic version that Fabric/Maven consume.
+def mcTaggedVersion = "mc${project.minecraft_version}_${project.mod_version}"
+tasks.withType(AbstractArchiveTask).configureEach {
+	archiveVersion = mcTaggedVersion
+}
 
 repositories {
 	maven { url = 'https://maven.shedaniel.me/' }
