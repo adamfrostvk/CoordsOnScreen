@@ -8,6 +8,7 @@
 - **Cloth Config and ModMenu are now optional** — they're only needed for the in-game settings screen. Without them, the mod still loads and is fully configurable via the file.
 - If ModMenu is installed but Cloth Config isn't, the Configure button is simply hidden instead of erroring.
 - **Minecraft 26.2 build** (`mc26.2_1.2.0`): rebuilt against Minecraft 26.2 with Fabric Loader 0.19.3, Fabric API 0.153.0+26.2, Cloth Config 26.2.155, and ModMenu 20.0.0-beta.4. No feature changes — same 1.2.0 feature set. The 26.2 build requires Minecraft 26.2 and does not load on 26.1.2; use the `mc26.1.2_1.2.0` build for 26.1.2.
+- Build toolchain updated to the stable **Fabric Loom 1.17.13** (previously the 1.16 snapshot line) and **Gradle 9.6.1**. No effect on the shipped jar's behavior.
 
 ## 1.1.1
 - Modded biomes now display a clean prettified name when the mod ships no translation key (e.g. `biome.mymod.crystal_forest` → "Crystal Forest"), and modded translations are honored when present.
