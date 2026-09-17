@@ -173,7 +173,8 @@ public final class CoordsHudElement implements HudElement {
 
             Registry<Structure> registry = server.registryAccess().lookup(Registries.STRUCTURE).orElseThrow();
             for (Structure structure : structures.keySet()) {
-                StructureStart start = structureManager.getStructureWithPieceAt(pos, structure);
+                // Update structure lookup to use Holder predicate due to Minecraft 26.3 registry changes.
+                StructureStart start = structureManager.getStructureWithPieceAt(pos, holder -> holder.value() == structure);
                 if (start != null && start.isValid()) {
                     Identifier id = registry.getKey(structure);
                     MutableComponent line;
